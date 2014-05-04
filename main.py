@@ -87,6 +87,14 @@ class invoice(object):
 
         self.sp = Toplevel(master)
 
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		Label(self.sp,text='').grid(row=0,column=0,sticky=W)
+		
 
         self.sendToLabel = Label(self.sp, text='send to:')
         self.sendToLabel.grid()
