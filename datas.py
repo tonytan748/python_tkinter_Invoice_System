@@ -10,18 +10,20 @@ FILENAME=os.path.join(FILEPATH,'invoice.db')
 
 USER=os.path.join(FILEPATH,'user.txt')
 
-def mainprocess(content):
+def mainprocess(*args):
+	m=args
 	try:
 		db=sqlite3.connect(FILENAME)
+		db.text_factory=str
 		cursor=db.cursor()
-		cursor.execute(content)
+		if len(m)==1:
+			cursor.execute(m[0])
+		else:
+			cursor.execute(m[0],m[1])
 		db.commit()
 	except Exception as e:
 		db.rollback()
 		print e
-	except DatabaseError as e:
-		db.rollback()
-		raise e
 	finally:
 		db.close()
 
@@ -31,30 +33,30 @@ def createTable():
 			id INTEGER PRIMARY KEY NOT NULL,
 			invoice_no TEXT NOT NULL,
 			invoice_rev TEXT NOT NULL,
-			invoice_date TEXT NOT NULL,
+			invoice_date TEXT,
 			project_code TEXT NOT NULL,
-			project_title TEXT NOT NULL,
-			client_company_name TEXT NOT NULL,
-			client_name TEXT NOT NULL,
-			quotation_date TEXT NOT NULL,
-			quotation_ref TEXT NOT NULL,
-			client_po_no TEXT NOT NULL,
-			credit_note_no TEXT NOT NULL,
-			credit_note_rev TEXT NOT NULL,
-			invoice_amount TEXT NOT NULL,
-			cn_amount TEXT NOT NULL,
-			retention_persent TEXT NOT NULL,
-			retention_acount TEXT NOT NULL,
-			gross_amount TEXT NOT NULL,
-			gst TEXT NOT NULL,
-			net_invoice_amount TEXT NOT NULL,
-			remarks TEXT NOT NULL,
-			payment_status NOT NULL,
-			create_by TEXT NOT NULL,
-			create_date TEXT NOT NULL,
-			is_delete TEXT NOT NULL,
-			delete_by TEXT NOT NULL,
-			delete_date TEXT NOT NULL
+			project_title TEXT,
+			client_company_name TEXT,
+			client_name TEXT,
+			quotation_date TEXT,
+			quotation_ref TEXT,
+			client_po_no TEXT,
+			credit_note_no TEXT,
+			credit_note_rev TEXT,
+			invoice_amount TEXT,
+			cn_amount TEXT,
+			retention_percent TEXT,
+			retention_amount TEXT,
+			gross_amount TEXT,
+			gst TEXT,
+			net_invoice_amount TEXT,
+			remarks TEXT,
+			payment_status TEXT,
+			create_by TEXT,
+			create_date TEXT,
+			is_delete TEXT,
+			delete_by TEXT,
+			delete_date TEXT
 		)
 	'''
 	mainprocess(content)
@@ -65,18 +67,15 @@ def getData():
 		c=db.cursor()
 		c.execute('SELECT * FROM invoice')
 		x=[]
-		for i in c:
-			if not i[23]:
-				m={'id':{0},'invoice_no':{1},'invoice_rev':{2},'invoice_date':{3},	'project_code':{4},'project_title':{5},'client_company_name':{6},'client_name':{7},'quotation_date':{8},'quotation_ref':{9},'client_po_no':{10},'credit_note_no':{11},'credit_note_rev':{12},'invoice_amount':{13},'cn_amount':{14},'retention_persent':{15},'retention_acount':{16},'gross_amount':{17},'gst':{18},'net_invoice_amount':{19},'remarks':{20},'payment_status':{21},'create_by':{22},'create_date':{23}}
+		for i in c.fetchall():
+			if not i[24]:
+				m={'id':i[0],'invoice_no':i[1],'invoice_rev':i[2],'invoice_date':i[3],	'project_code':i[4],'project_title':i[5],'client_company_name':i[6],'client_name':i[7],'quotation_date':i[8],'quotation_ref':i[9],'client_po_no':i[10],'credit_note_no':i[11],'credit_note_rev':i[12],'invoice_amount':i[13],'cn_amount':i[14],'retention_percent':i[15],'retention_amount':i[16],'gross_amount':i[17],'gst':i[18],'net_invoice_amount':i[19],'remarks':i[20],'payment_status':i[21],'create_by':i[22],'create_date':i[23],'is_delete':i[24],'delete_by':i[25],'delete_date':i[26]}
 				x.append(m)
 		db.commit()
 		return x
 	except Exception as e:
 		db.rollback()
 		print e
-	except DatabaseError as e:
-		db.rollback()
-		raise e
 	finally:
 		db.close()
 
@@ -98,28 +97,53 @@ def searchProject(pro_code):
 		else:
 			return
 
+def newInvoiceRev(inv_no):
+	if inv_no:
+		m=getData()
+		x=list(i for i in m if inv_no == i['invoice_no'])
+		print x
+		try:
+			a1=[int(i['invoice_rev'][1:]) for i in x]
+			max=a1.index(max(a1))+1
+			print max
+			return max
+		except Exception as e:
+			print e
+			return 
+			
+def newInvoiceNo():
+	m=getData()
+	print m
+	if m:
+		try:
+			x=(int(i['invoice_no'][1:]) for i in m)
+			max=x.index(max(x))+1
+			return 'I' + ((4-len(max))*'0') + str(max)
+		except Exception as e:
+			return
+	else:
+		return u'I0001'
+			
 def add(inv_list):
 	if inv_list:
-		content='''
-			INSERT INTO invoice(invoice_no,invoice_rev,invoice_date,project_code,project_title,client_company_name,client_name,quotation_date,quotation_ref,client_po_no,credit_note_no,credit_note_rev,invoice_amount,cn_amount,retention_persent,retention_acount,gross_amount,gst,net_invoice_amount,remarks,create_by,create_date) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-		''',(inv_list)
-		mainprocess(content)
+		prnt=tuple(inv_list)
+		content='''INSERT INTO invoice(invoice_no,invoice_rev,invoice_date,project_code,project_title,client_company_name,client_name,quotation_date,quotation_ref,client_po_no,credit_note_no,credit_note_rev,invoice_amount,cn_amount,retention_percent,retention_amount,gross_amount,gst,net_invoice_amount,remarks,payment_status,create_by,create_date,is_delete,delete_by,delete_date) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
+		values=tuple(inv_list)
+		mainprocess(content,values)
 		return True
 
 def update(inv_id,inv_list):
 	if inv_id and inv_list:
-		content='''
-			UPDATE invoice SET invoice_no=?, invoice_rev=?, invoice_date=?, project_code=?, project_title=?, client_company_name=?, client_name=?, quotation_date=?, quotation_ref=?, client_po_no=?, credit_note_no=?, credit_note_rev=?, invoice_amount=?, cn_amount=?, retention_persent=?, retention_acount=?, gross_amount=?, gst=?, net_invoice_amount=?, remarks=?, create_by=?, create_date=? WHERE id=?
-		''',(','.join(inv_list),inv_id)
-		mainprocess(content)
+		content='''UPDATE invoice SET invoice_no=?, invoice_rev=?, invoice_date=?, project_code=?, project_title=?, client_company_name=?, client_name=?, quotation_date=?, quotation_ref=?, client_po_no=?, credit_note_no=?, credit_note_rev=?, invoice_amount=?, cn_amount=?, retention_percent=?, retention_amount=?, gross_amount=?, gst=?, net_invoice_amount=?, remarks=?, create_by=?, create_date=? WHERE id=?'''
+		values=(','.join(inv_list),inv_id)
+		mainprocess(content,values)
 		return True
 		
 def delete(inv_id,del_info):
 	if inv_id and del_info:
-		content='''
-			UPDATE invoice SET is_delete=1, delete_by=?, delete_date=?
-		''',(inv_id,','.join(del_info))
-		mainprocess(content)
+		content='''UPDATE invoice SET is_delete=1, delete_by=?, delete_date=?'''
+		values=(inv_id,','.join(del_info))
+		mainprocess(content,values)
 		return True
 
 
@@ -154,7 +178,15 @@ def getProject():
 			x.append(n.split(','))
 	#print x
 	return x[8:]
-
+	
+def insertTest():
+	content='''INSERT INTO invoice(invoice_no,invoice_rev,invoice_date,project_code,project_title,client_company_name,client_name,quotation_date,quotation_ref,client_po_no,credit_note_no,credit_note_rev,invoice_amount,cn_amount,retention_percent,retention_amount,gross_amount,gst,net_invoice_amount,remarks,payment_status,create_by,create_date,is_delete,delete_by,delete_date) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''
+	values=('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26')
+	mainprocess(content,values)
+	return True
 
 if __name__=='__main__':
 	createTable()
+	insertTest()
+	m=getData()
+	print m
