@@ -101,25 +101,30 @@ def newInvoiceRev(inv_no):
 	if inv_no:
 		m=getData()
 		x=list(i for i in m if inv_no == i['invoice_no'])
-		print x
 		try:
 			a1=[int(i['invoice_rev'][1:]) for i in x]
-			max=a1.index(max(a1))+1
-			print max
-			return max
+			mx=a1.index(max(a1))+1
+			n='R'+str(mx)
+			return n
 		except Exception as e:
 			print e
 			return 
 			
 def newInvoiceNo():
 	m=getData()
-	print m
 	if m:
 		try:
-			x=(int(i['invoice_no'][1:]) for i in m)
-			max=x.index(max(x))+1
-			return 'I' + ((4-len(max))*'0') + str(max)
+			x=[int(i['invoice_no'][1:]) for i in m]
+			if len(x)>1:
+				mx=max(x)+1
+			else:
+				mx=2
+			print mx
+			n='I' + ((4-len(str(mx)))*'0') + str(mx)
+			print n
+			return n
 		except Exception as e:
+			print e
 			return
 	else:
 		return u'I0001'
@@ -134,15 +139,17 @@ def add(inv_list):
 
 def update(inv_id,inv_list):
 	if inv_id and inv_list:
-		content='''UPDATE invoice SET invoice_no=?, invoice_rev=?, invoice_date=?, project_code=?, project_title=?, client_company_name=?, client_name=?, quotation_date=?, quotation_ref=?, client_po_no=?, credit_note_no=?, credit_note_rev=?, invoice_amount=?, cn_amount=?, retention_percent=?, retention_amount=?, gross_amount=?, gst=?, net_invoice_amount=?, remarks=?, create_by=?, create_date=? WHERE id=?'''
-		values=(','.join(inv_list),inv_id)
+		content='''UPDATE invoice SET invoice_no=?, invoice_rev=?, invoice_date=?, project_code=?, project_title=?, client_company_name=?, client_name=?, quotation_date=?, quotation_ref=?, client_po_no=?, credit_note_no=?, credit_note_rev=?, invoice_amount=?, cn_amount=?, retention_percent=?, retention_amount=?, gross_amount=?, gst=?, net_invoice_amount=?, remarks=?, payment_status=?, create_by=?, create_date=?, is_delete=?, delete_by=?, delete_date=? WHERE id=?'''
+		m=inv_list.append(inv_id)
+		values=tuple(inv_list)
+		#values=(','.join(inv_list),int(inv_id))
 		mainprocess(content,values)
 		return True
 		
 def delete(inv_id,del_info):
 	if inv_id and del_info:
-		content='''UPDATE invoice SET is_delete=1, delete_by=?, delete_date=?'''
-		values=(inv_id,','.join(del_info))
+		content='''UPDATE invoice SET is_delete=1, delete_by=?, delete_date=? WHERE id=?'''
+		values=(','.join(del_info),inv_id)
 		mainprocess(content,values)
 		return True
 
